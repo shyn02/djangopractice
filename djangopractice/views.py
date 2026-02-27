@@ -1,23 +1,27 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.views import View
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
-from .models import User
-
-def login_page(request):
-    return render(request, "login.html")
-
-def login_user(request):
-    if request.method == "POST":
+from django.contrib.auth import get_user_model  
+        
+class LoginUserView(View):
+    def get(self, request):
+        return render(request, "login.html")
+    
+    def post(self, request):
         email = request.POST.get("email")
         password = request.POST.get("password")
 
-        # Attempt to find user by email, then authenticate by password
         try:
-            user_obj = User.objects.get(email__iexact=email)
-            user = authenticate(request, username=user_obj.username, password=password)
-        except User.DoesNotExist:
+            user_obj_email = get_user_model.objects.get(email__iexact=email)
+            if user_obj_email:
+                user = authenticate(request, username=user_obj_email.username, password=password)
+            else:
+                user = authenticate(request, username=email, password=password)
+        except get_user_model.DoesNotExist:
             messages.error(request, "Invalid email or password.")
             return redirect("/login")
 
@@ -28,20 +32,21 @@ def login_user(request):
         else:
             messages.error(request, "Invalid email or password.")
             return redirect("/login")
-        
-@login_required        
-def dashboard(request):
-    return render(request, "dashboard.html")
 
-@login_required
-def logout_user(request):
-    logout(request)
-    messages.success(request, "Logged out successfully.")
-    return redirect('login')
+class DashboardView(LoginRequiredMixin, TemplateView):
+    template_name = "dashboard.html"
 
-@login_required
-def change_password(request):
-    if request.method == "POST":
+class LogoutUserView(LoginRequiredMixin, View):
+    def get(self, request):
+        logout(request)
+        messages.success(request, "Logged out successfully.")
+        return redirect('login')
+    
+class ChangePasswordView(LoginRequiredMixin, View):
+    def get(self, request):
+        return redirect("dashboard")
+    
+    def post(self, request):
         current = request.POST.get("current_password")
         new = request.POST.get("new_password")
         confirm = request.POST.get("confirm_password")
@@ -64,5 +69,3 @@ def change_password(request):
         update_session_auth_hash(request, request.user)
         messages.success(request, "Password changed successfully.")
         return redirect("dashboard")
-    
-    return redirect("dashboard")
