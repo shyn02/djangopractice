@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'conf',
     'djangopractice',
 ]
 
@@ -107,7 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'djangopractice.User'
+AUTH_USER_MODEL = 'conf.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
